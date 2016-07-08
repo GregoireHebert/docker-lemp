@@ -1,0 +1,63 @@
+version: '2'
+services:
+  nginx:
+    image: nginx:mainline-alpine
+    container_name: lemp_nginx
+    restart: always
+    links:
+      - php
+    volumes:
+      - ./html:/var/www/html/:ro
+      - ./nginx/conf/nginx.conf:/etc/nginx/conf/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    expose:
+      - "80"
+      - "443"
+    ports:
+        - "80:80"
+        - "444:443"
+    dns_search: nginx
+  php:
+    build: ./php
+    container_name: lemp_php
+    restart: always
+    volumes:
+      - ./html:/var/www/html
+    depends_on:
+      - db
+    links:
+      - db
+    dns_search: php
+  db:
+    image: mysql:latest
+    container_name: lemp_mysql
+    restart: always
+    volumes:
+      - db-data/:/var/lib/mysql
+      - ./database/:/var/lib/mysql
+    environment:
+        MYSQL_ROOT_PASSWORD: null
+        MYSQL_ALLOW_EMPTY_PASSWORD: "true"
+        MYSQL_USER: root
+        MYSQL_PASSWORD: null
+    dns_search: db
+    ports:
+        - "3307:3306"
+    expose:
+        - "3306"
+  pma:
+    image: phpmyadmin/phpmyadmin
+    container_name: lemp_pma
+    environment:
+      - MYSQL_USERNAME=root
+      - MYSQL_PASSWORD=null
+    restart: always
+    ports:
+        - "8080:80"
+    volumes: 
+      - /sessions
+    links:
+      - db:mysql
+volumes:
+  db-data:
+    driver: local
